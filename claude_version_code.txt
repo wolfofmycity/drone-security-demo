@@ -1,0 +1,648 @@
+import React, { useState, useEffect } from 'react';
+import { Shield, Wifi, Radio, Lock, AlertTriangle, CheckCircle, XCircle, Settings, Monitor, Activity, MapPin, Battery, Signal, Satellite, Clock, AlertCircle, Users, Database, Zap } from 'lucide-react';
+
+const DroneSecurityDashboard = () => {
+  const [activeTab, setActiveTab] = useState('monitor');
+  const [securityStatus, setSecurityStatus] = useState({
+    communication: { status: 'secure', strength: 98, encryption: 'AES-256' },
+    authentication: { status: 'active', sessions: 1, lastLogin: '2 min ago' },
+    encryption: { status: 'enabled', protocol: 'AES-256', keyRotation: 'Active' },
+    intrusion: { status: 'none', attempts: 0, lastScan: '1 min ago' },
+    gps: { status: 'secure', satellites: 12, accuracy: '0.5m' },
+    firmware: { status: 'updated', version: 'v2.1.3', lastUpdate: '2 days ago' }
+  });
+
+  const [droneData, setDroneData] = useState({
+    position: { lat: 51.5074, lng: -0.1278, altitude: 120 },
+    battery: 87,
+    signal: 94,
+    speed: 15.2,
+    heading: 245,
+    satellites: 12,
+    flightTime: '00:12:34'
+  });
+
+  const [telemetryLogs, setTelemetryLogs] = useState([
+    { id: 1, timestamp: '14:32:15', type: 'info', category: 'GPS', message: 'Position acquired - 12 satellites locked', severity: 'low', coordinates: '51.5074, -0.1278' },
+    { id: 2, timestamp: '14:32:10', type: 'success', category: 'Security', message: 'Authentication successful - Operator verified', severity: 'low', user: 'admin@company.com' },
+    { id: 3, timestamp: '14:32:05', type: 'warning', category: 'RF', message: 'Minor interference detected on 2.4GHz band', severity: 'medium', frequency: '2.4GHz' },
+    { id: 4, timestamp: '14:32:00', type: 'info', category: 'System', message: 'Flight mode activated - All systems nominal', severity: 'low', mode: 'Manual' },
+    { id: 5, timestamp: '14:31:55', type: 'success', category: 'Encryption', message: 'Communication channel encrypted successfully', severity: 'low', protocol: 'AES-256' },
+    { id: 6, timestamp: '14:31:50', type: 'info', category: 'Battery', message: 'Battery level optimal - 87% remaining', severity: 'low', level: '87%' },
+    { id: 7, timestamp: '14:31:45', type: 'warning', category: 'Geo-fence', message: 'Approaching geo-fence boundary - 50m remaining', severity: 'medium', distance: '50m' },
+    { id: 8, timestamp: '14:31:40', type: 'info', category: 'Navigation', message: 'Route calculation complete - ETA 5 minutes', severity: 'low', eta: '5 min' }
+  ]);
+
+  const [scanning, setScanning] = useState(false);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      // Simulate real-time telemetry updates
+      setDroneData(prev => ({
+        ...prev,
+        battery: Math.max(20, prev.battery - 0.1),
+        signal: 90 + Math.random() * 10,
+        speed: 10 + Math.random() * 20,
+        heading: (prev.heading + Math.random() * 10 - 5) % 360,
+        position: {
+          ...prev.position,
+          lat: prev.position.lat + (Math.random() - 0.5) * 0.001,
+          lng: prev.position.lng + (Math.random() - 0.5) * 0.001
+        }
+      }));
+
+      // Add new telemetry log occasionally
+      if (Math.random() > 0.7) {
+        const newLog = {
+          id: Date.now(),
+          timestamp: new Date().toLocaleTimeString(),
+          type: Math.random() > 0.8 ? 'warning' : Math.random() > 0.6 ? 'success' : 'info',
+          category: ['GPS', 'Security', 'RF', 'System', 'Battery'][Math.floor(Math.random() * 5)],
+          message: [
+            'Telemetry data received successfully',
+            'GPS coordinates updated',
+            'Security scan completed',
+            'Communication link stable',
+            'System performance nominal'
+          ][Math.floor(Math.random() * 5)],
+          severity: Math.random() > 0.8 ? 'high' : Math.random() > 0.6 ? 'medium' : 'low'
+        };
+        setTelemetryLogs(prev => [newLog, ...prev.slice(0, 19)]);
+      }
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const startSecurityScan = () => {
+    setScanning(true);
+    setTimeout(() => {
+      setScanning(false);
+      setSecurityStatus(prev => ({
+        ...prev,
+        intrusion: { 
+          ...prev.intrusion, 
+          status: Math.random() > 0.8 ? 'detected' : 'none',
+          attempts: Math.random() > 0.8 ? Math.floor(Math.random() * 3) : 0
+        }
+      }));
+    }, 5000);
+  };
+
+  const getStatusIcon = (status) => {
+    switch(status) {
+      case 'secure':
+      case 'active':
+      case 'enabled':
+      case 'updated':
+      case 'none':
+        return <CheckCircle className="w-5 h-5 text-green-400" />;
+      case 'detected':
+      case 'vulnerable':
+        return <XCircle className="w-5 h-5 text-red-400" />;
+      default:
+        return <AlertTriangle className="w-5 h-5 text-yellow-400" />;
+    }
+  };
+
+  const getLogIcon = (type) => {
+    switch(type) {
+      case 'success':
+        return <CheckCircle className="w-4 h-4 text-green-400" />;
+      case 'warning':
+        return <AlertTriangle className="w-4 h-4 text-yellow-400" />;
+      case 'error':
+        return <XCircle className="w-4 h-4 text-red-400" />;
+      default:
+        return <AlertCircle className="w-4 h-4 text-blue-400" />;
+    }
+  };
+
+  const SecurityMonitor = () => (
+    <div className="space-y-6">
+      {/* Security Status Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="bg-gray-800 border border-gray-700 rounded-lg p-4 hover:bg-gray-750 transition-colors">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center space-x-2">
+              <Radio className="w-5 h-5 text-blue-400" />
+              <span className="font-medium text-white">Communication</span>
+            </div>
+            {getStatusIcon(securityStatus.communication.status)}
+          </div>
+          <div className="space-y-1 text-sm text-gray-300">
+            <p>Signal: {securityStatus.communication.strength}%</p>
+            <p>Encryption: {securityStatus.communication.encryption}</p>
+          </div>
+        </div>
+
+        <div className="bg-gray-800 border border-gray-700 rounded-lg p-4 hover:bg-gray-750 transition-colors">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center space-x-2">
+              <Lock className="w-5 h-5 text-green-400" />
+              <span className="font-medium text-white">Authentication</span>
+            </div>
+            {getStatusIcon(securityStatus.authentication.status)}
+          </div>
+          <div className="space-y-1 text-sm text-gray-300">
+            <p>Sessions: {securityStatus.authentication.sessions}</p>
+            <p>Last: {securityStatus.authentication.lastLogin}</p>
+          </div>
+        </div>
+
+        <div className="bg-gray-800 border border-gray-700 rounded-lg p-4 hover:bg-gray-750 transition-colors">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center space-x-2">
+              <Shield className="w-5 h-5 text-purple-400" />
+              <span className="font-medium text-white">Encryption</span>
+            </div>
+            {getStatusIcon(securityStatus.encryption.status)}
+          </div>
+          <div className="space-y-1 text-sm text-gray-300">
+            <p>Protocol: {securityStatus.encryption.protocol}</p>
+            <p>Key Rotation: {securityStatus.encryption.keyRotation}</p>
+          </div>
+        </div>
+
+        <div className="bg-gray-800 border border-gray-700 rounded-lg p-4 hover:bg-gray-750 transition-colors">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center space-x-2">
+              <AlertTriangle className="w-5 h-5 text-red-400" />
+              <span className="font-medium text-white">Intrusion</span>
+            </div>
+            {getStatusIcon(securityStatus.intrusion.status)}
+          </div>
+          <div className="space-y-1 text-sm text-gray-300">
+            <p>Attempts: {securityStatus.intrusion.attempts}</p>
+            <p>Last Scan: {securityStatus.intrusion.lastScan}</p>
+          </div>
+        </div>
+
+        <div className="bg-gray-800 border border-gray-700 rounded-lg p-4 hover:bg-gray-750 transition-colors">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center space-x-2">
+              <Satellite className="w-5 h-5 text-indigo-400" />
+              <span className="font-medium text-white">GPS Security</span>
+            </div>
+            {getStatusIcon(securityStatus.gps.status)}
+          </div>
+          <div className="space-y-1 text-sm text-gray-300">
+            <p>Satellites: {securityStatus.gps.satellites}</p>
+            <p>Accuracy: {securityStatus.gps.accuracy}</p>
+          </div>
+        </div>
+
+        <div className="bg-gray-800 border border-gray-700 rounded-lg p-4 hover:bg-gray-750 transition-colors">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center space-x-2">
+              <Settings className="w-5 h-5 text-orange-400" />
+              <span className="font-medium text-white">Firmware</span>
+            </div>
+            {getStatusIcon(securityStatus.firmware.status)}
+          </div>
+          <div className="space-y-1 text-sm text-gray-300">
+            <p>Version: {securityStatus.firmware.version}</p>
+            <p>Updated: {securityStatus.firmware.lastUpdate}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Drone Telemetry */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Live Telemetry */}
+        <div className="bg-gray-800 border border-gray-700 rounded-lg p-4">
+          <h3 className="font-medium text-white mb-4 flex items-center">
+            <Activity className="w-5 h-5 mr-2 text-green-400" />
+            Live Telemetry
+          </h3>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <Battery className="w-4 h-4 text-green-400" />
+                <span className="text-gray-300">Battery</span>
+              </div>
+              <span className="text-white font-medium">{Math.round(droneData.battery)}%</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <Signal className="w-4 h-4 text-blue-400" />
+                <span className="text-gray-300">Signal</span>
+              </div>
+              <span className="text-white font-medium">{Math.round(droneData.signal)}%</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <Zap className="w-4 h-4 text-yellow-400" />
+                <span className="text-gray-300">Speed</span>
+              </div>
+              <span className="text-white font-medium">{droneData.speed.toFixed(1)} m/s</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <MapPin className="w-4 h-4 text-red-400" />
+                <span className="text-gray-300">Altitude</span>
+              </div>
+              <span className="text-white font-medium">{droneData.position.altitude}m</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <Clock className="w-4 h-4 text-purple-400" />
+                <span className="text-gray-300">Flight Time</span>
+              </div>
+              <span className="text-white font-medium">{droneData.flightTime}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Map Placeholder */}
+        <div className="lg:col-span-2 bg-gray-800 border border-gray-700 rounded-lg p-4">
+          <h3 className="font-medium text-white mb-4 flex items-center">
+            <MapPin className="w-5 h-5 mr-2 text-red-400" />
+            Live Position Tracking
+          </h3>
+          <div className="bg-gray-900 rounded-lg h-64 flex items-center justify-center border border-gray-600">
+            <div className="text-center">
+              <MapPin className="w-12 h-12 text-red-400 mx-auto mb-2" />
+              <p className="text-gray-400 mb-2">Live GPS Tracking</p>
+              <p className="text-sm text-gray-500">
+                Lat: {droneData.position.lat.toFixed(4)}, Lng: {droneData.position.lng.toFixed(4)}
+              </p>
+              <p className="text-sm text-gray-500">
+                Heading: {Math.round(droneData.heading)}° | Satellites: {droneData.satellites}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Telemetry Logs */}
+      <div className="bg-gray-800 border border-gray-700 rounded-lg">
+        <div className="p-4 border-b border-gray-700">
+          <div className="flex items-center justify-between">
+            <h3 className="font-medium text-white flex items-center">
+              <Database className="w-5 h-5 mr-2 text-blue-400" />
+              Security & Telemetry Logs
+            </h3>
+            <button
+              onClick={startSecurityScan}
+              disabled={scanning}
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {scanning ? 'Scanning...' : 'Run Security Scan'}
+            </button>
+          </div>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-750">
+              <tr>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Time</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Type</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Category</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Message</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Severity</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-700">
+              {telemetryLogs.map((log) => (
+                <tr key={log.id} className="hover:bg-gray-750 transition-colors">
+                  <td className="px-4 py-3 text-sm text-gray-300">{log.timestamp}</td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center space-x-2">
+                      {getLogIcon(log.type)}
+                      <span className="text-sm capitalize text-gray-300">{log.type}</span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-700 text-gray-300">
+                      {log.category}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-sm text-gray-300">{log.message}</td>
+                  <td className="px-4 py-3">
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      log.severity === 'high' ? 'bg-red-900 text-red-200' :
+                      log.severity === 'medium' ? 'bg-yellow-900 text-yellow-200' :
+                      'bg-green-900 text-green-200'
+                    }`}>
+                      {log.severity}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+
+  const ProtectionSystems = () => (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="bg-gray-800 border border-gray-700 rounded-lg p-6">
+          <h3 className="font-medium mb-4 flex items-center text-white">
+            <Wifi className="w-5 h-5 mr-2 text-blue-400" />
+            RF Security
+          </h3>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-gray-300">Frequency Hopping</span>
+              <label className="switch">
+                <input type="checkbox" defaultChecked />
+                <span className="slider round bg-green-500"></span>
+              </label>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-gray-300">Signal Encryption</span>
+              <label className="switch">
+                <input type="checkbox" defaultChecked />
+                <span className="slider round bg-green-500"></span>
+              </label>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-gray-300">Anti-Jamming</span>
+              <label className="switch">
+                <input type="checkbox" defaultChecked />
+                <span className="slider round bg-green-500"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-gray-800 border border-gray-700 rounded-lg p-6">
+          <h3 className="font-medium mb-4 flex items-center text-white">
+            <Lock className="w-5 h-5 mr-2 text-green-400" />
+            Access Control
+          </h3>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-gray-300">Multi-Factor Auth</span>
+              <label className="switch">
+                <input type="checkbox" defaultChecked />
+                <span className="slider round bg-green-500"></span>
+              </label>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-gray-300">Biometric Lock</span>
+              <label className="switch">
+                <input type="checkbox" />
+                <span className="slider round bg-gray-600"></span>
+              </label>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-gray-300">Session Timeout</span>
+              <label className="switch">
+                <input type="checkbox" defaultChecked />
+                <span className="slider round bg-green-500"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-gray-800 border border-gray-700 rounded-lg p-6">
+          <h3 className="font-medium mb-4 flex items-center text-white">
+            <Satellite className="w-5 h-5 mr-2 text-purple-400" />
+            GPS Protection
+          </h3>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-gray-300">Spoofing Detection</span>
+              <label className="switch">
+                <input type="checkbox" defaultChecked />
+                <span className="slider round bg-green-500"></span>
+              </label>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-gray-300">Multi-Constellation</span>
+              <label className="switch">
+                <input type="checkbox" defaultChecked />
+                <span className="slider round bg-green-500"></span>
+              </label>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-gray-300">INS Backup</span>
+              <label className="switch">
+                <input type="checkbox" defaultChecked />
+                <span className="slider round bg-green-500"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-gray-800 border border-gray-700 rounded-lg p-6">
+          <h3 className="font-medium mb-4 flex items-center text-white">
+            <Activity className="w-5 h-5 mr-2 text-red-400" />
+            Intrusion Detection
+          </h3>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-gray-300">Behavioral Analysis</span>
+              <label className="switch">
+                <input type="checkbox" defaultChecked />
+                <span className="slider round bg-green-500"></span>
+              </label>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-gray-300">Network Monitoring</span>
+              <label className="switch">
+                <input type="checkbox" defaultChecked />
+                <span className="slider round bg-green-500"></span>
+              </label>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-gray-300">Real-time Alerts</span>
+              <label className="switch">
+                <input type="checkbox" defaultChecked />
+                <span className="slider round bg-green-500"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const SecuritySettings = () => (
+    <div className="space-y-6">
+      <div className="bg-gray-800 border border-gray-700 rounded-lg p-6">
+        <h3 className="font-medium mb-4 text-white">Security Configuration</h3>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium mb-2 text-gray-300">Encryption Level</label>
+            <select className="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+              <option>AES-256</option>
+              <option>AES-128</option>
+              <option>ChaCha20</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-2 text-gray-300">Authentication Method</label>
+            <select className="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+              <option>Certificate-based</option>
+              <option>Pre-shared Key</option>
+              <option>OAuth 2.0</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-2 text-gray-300">Geo-fence Radius (m)</label>
+            <input 
+              type="number" 
+              className="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+              defaultValue="1000" 
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-gray-800 border border-gray-700 rounded-lg p-6">
+        <h3 className="font-medium mb-4 text-white">Emergency Protocols</h3>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <span className="text-gray-300">Auto-land on signal loss</span>
+            <label className="switch">
+              <input type="checkbox" defaultChecked />
+              <span className="slider round bg-green-500"></span>
+            </label>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-gray-300">Return-to-home on intrusion</span>
+            <label className="switch">
+              <input type="checkbox" defaultChecked />
+              <span className="slider round bg-green-500"></span>
+            </label>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-gray-300">Data wipe on compromise</span>
+            <label className="switch">
+              <input type="checkbox" />
+              <span className="slider round bg-gray-600"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="min-h-screen bg-gray-900 text-white">
+      {/* Header */}
+      <header className="bg-gray-800 border-b border-gray-700 px-6 py-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <Shield className="w-8 h-8 text-blue-400" />
+            <div>
+              <h1 className="text-xl font-bold text-white">DroneGuard Security</h1>
+              <p className="text-sm text-gray-400">Advanced UAV Protection Platform</p>
+            </div>
+          </div>
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2">
+              <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
+              <span className="text-sm text-gray-300">System Online</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Users className="w-4 h-4 text-gray-400" />
+              <span className="text-sm text-gray-300">Admin</span>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Navigation Tabs */}
+      <nav className="bg-gray-800 border-b border-gray-700">
+        <div className="px-6">
+          <div className="flex space-x-8">
+            <button
+              onClick={() => setActiveTab('monitor')}
+              className={`py-4 px-2 border-b-2 font-medium text-sm transition-colors ${
+                activeTab === 'monitor'
+                  ? 'border-blue-400 text-blue-400'
+                  : 'border-transparent text-gray-400 hover:text-gray-300'
+              }`}
+            >
+              Security Monitor
+            </button>
+            <button
+              onClick={() => setActiveTab('protection')}
+              className={`py-4 px-2 border-b-2 font-medium text-sm transition-colors ${
+                activeTab === 'protection'
+                  ? 'border-blue-400 text-blue-400'
+                  : 'border-transparent text-gray-400 hover:text-gray-300'
+              }`}
+            >
+              Protection Systems
+            </button>
+            <button
+              onClick={() => setActiveTab('settings')}
+              className={`py-4 px-2 border-b-2 font-medium text-sm transition-colors ${
+                activeTab === 'settings'
+                  ? 'border-blue-400 text-blue-400'
+                  : 'border-transparent text-gray-400 hover:text-gray-300'
+              }`}
+            >
+              Settings
+            </button>
+          </div>
+        </div>
+      </nav>
+
+      {/* Main Content */}
+      <main className="p-6">
+        {activeTab === 'monitor' && <SecurityMonitor />}
+        {activeTab === 'protection' && <ProtectionSystems />}
+        {activeTab === 'settings' && <SecuritySettings />}
+      </main>
+
+      {/* Toggle Switch Styles */}
+      <style jsx>{`
+        .switch {
+          position: relative;
+          display: inline-block;
+          width: 50px;
+          height: 24px;
+        }
+
+        .switch input {
+          opacity: 0;
+          width: 0;
+          height: 0;
+        }
+
+        .slider {
+          position: absolute;
+          cursor: pointer;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background-color: #4b5563;
+          transition: .4s;
+          border-radius: 24px;
+        }
+
+        .slider:before {
+          position: absolute;
+          content: "";
+          height: 18px;
+          width: 18px;
+          left: 3px;
+          bottom: 3px;
+          background-color: white;
+          transition: .4s;
+          border-radius: 50%;
+        }
+
+        input:checked + .slider {
+          background-color: #10b981;
+        }
+
+        input:checked + .slider:before {
+          transform: translateX(26px);
+        }
+      `}</style>
+    </div>
+  );
+};
+
+export default DroneSecurityDashboard;
